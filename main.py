@@ -2,58 +2,73 @@ import streamlit as st
 import sys
 import os
 
+# 1. Configuración de página (SIEMPRE PRIMERO)
 st.set_page_config(page_title="MENFA Capacitaciones", layout="wide", page_icon="⚒️")
 
-# Forzar rutas para que Streamlit vea todo
-current_dir = os.path.dirname(os.path.abspath(__file__))
-if current_dir not in sys.path:
-    sys.path.append(current_dir)
+# 2. Forzar que Python reconozca la raíz del proyecto
+path_raiz = os.path.dirname(os.path.abspath(__file__))
+if path_raiz not in sys.path:
+    sys.path.insert(0, path_raiz)
 
+# 3. Importaciones seguras
 try:
+    # Importamos los módulos asegurando que busquen en la raíz
+    import models
     from database_manager import Session, inicializar_sistema
     from modulos.auth import login, logout
     from modulos.biblioteca import modulo_biblioteca
     from admin_panel import admin_module
-    exito = True
+    from crear_admin import crear_primer_admin
+    
+    exito_import = True
 except ImportError as e:
-    st.error(f"Error de archivos: {e}")
-    st.stop()
+    st.error(f"Error crítico de archivos: {e}")
+    st.info("Asegurate de que 'models.py' y 'database_manager.py' estén en la raíz.")
+    exito_import = False
 
 def main():
-  def main():
-     if exito:
-        inicializar_sistema()
-        
-        # --- AGREGÁ ESTO PARA CREAR AL ADMIN ---
-        from crear_admin import crear_primer_admin
-        crear_primer_admin()
-        # ----------------------------------------
-        
-        session = Session()
-        # ... resto del código
-  
-        if 'autenticado' not in st.session_state:
-            st.session_state['autenticado'] = False
+    if not exito_import:
+        return
 
-        if not st.session_state['autenticado']:
-            login(session)
+    # Inicializar base de datos y crear usuario admin oficial
+    inicializar_sistema()
+    crear_primer_admin()
+    
+    session = Session()
+
+    # Manejo de la sesión en Streamlit
+    if 'autenticado' not in st.session_state:
+        st.session_state['autenticado'] = False
+
+    if not st.session_state['autenticado']:
+        login(session)
+    else:
+        # --- Interfaz de Usuario Logueado ---
+        st.sidebar.title(f"Hola, {st.session_state.get('nombre', 'Usuario')}")
+        rol = st.session_state.get('rol', 'alumno')
+        
+        # Definir menú según el rol (Admin o Alumno)
+        if rol == "admin":
+            menu = ["Dashboard", "Administración CRM", "Biblioteca Técnica"]
         else:
-            st.sidebar.title(f"Hola, {st.session_state.get('nombre', 'Usuario')}")
-            rol = st.session_state.get('rol', 'alumno')
-            
-            menu = ["Dashboard", "Administración CRM", "Biblioteca Técnica"] if rol == "admin" else ["Mis Recursos"]
-            opcion = st.sidebar.selectbox("Menú", menu)
-            
-            if st.sidebar.button("Cerrar Sesión"):
-                logout()
+            menu = ["Mis Recursos"]
+        
+        opcion = st.sidebar.selectbox("Navegación", menu)
+        
+        if st.sidebar.button("Cerrar Sesión"):
+            logout()
 
-            if opcion == "Administración CRM":
-                admin_module()
-            elif opcion in ["Biblioteca Técnica", "Mis Recursos"]:
-                modulo_biblioteca(session, rol, st.session_state.get('usuario_id'))
-            else:
-                st.title("Panel Control MENFA")
-                st.info("Seleccioná una opción para empezar.")
+        # Enrutamiento de la aplicación
+        if opcion == "Administración CRM":
+            admin_module()
+        elif opcion in ["Biblioteca Técnica", "Mis Recursos"]:
+            modulo_biblioteca(session, rol, st.session_state.get('usuario_id'))
+        else:
+            st.title("Panel de Control MENFA")
+            st.write("---")
+            st.info("Bienvenido al simulador y biblioteca técnica. Seleccioná una opción en el menú lateral.")
+            
+    session.close()
 
 if __name__ == "__main__":
     main()

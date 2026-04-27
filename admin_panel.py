@@ -1,66 +1,60 @@
 import streamlit as st
-from models import Usuario, Recurso
+import os
+from database_manager import Session
+from models import Programa
 
 def admin_module():
     st.title("⚙️ Panel de Administración - MENFA")
-    
-    tab1, tab2, tab3 = st.tabs(["Registrar Alumno", "Cargar Material", "Lista de Usuarios"])
-    
-    # Obtener sesión de base de datos desde el estado de streamlit
-    from database_manager import Session
     session = Session()
 
-    with tab1:
-        st.subheader("Alta de Nuevo Alumno")
-        with st.form("nuevo_usuario"):
-            nombre = st.text_input("Nombre y Apellido Completo")
-            email = st.text_input("Correo Electrónico")
-            rol = st.selectbox("Rol", ["alumno", "admin"])
+    # 1. Asegurar que exista la carpeta para guardar los archivos
+    if not os.path.exists("archivos_programas"):
+        os.makedirs("archivos_programas")
+
+    # 2. Creamos las pestañas (Agregamos la de Programas)
+    tab_alumnos, tab_programas, tab_materiales = st.tabs([
+        "👥 Gestión de Alumnos", 
+        "📄 Programas (PDF/Docs)", 
+        "📚 Material de Estudio"
+    ])
+
+    with tab_alumnos:
+        st.subheader("Registro de nuevos alumnos")
+        # Aquí va tu código actual de registro de alumnos...
+
+    with tab_programas:
+        st.subheader("Cargar Programa Oficial (Archivo)")
+        st.write("Subí el PDF o Word con el programa completo del curso.")
+
+        # Buscamos qué programas existen en la DB para asociar el archivo
+        programas = session.query(Programa).all()
+        nombres_prog = {p.nombre: p.id for p in programas}
+
+        if nombres_prog:
+            prog_seleccionado = st.selectbox("Seleccioná el curso", list(nombres_prog.keys()))
             
-            submit = st.form_submit_button("Generar Credenciales y Crear")
+            archivo = st.file_uploader("Seleccioná el programa", type=['pdf', 'docx', 'doc'])
             
-            if submit:
-                if nombre and email:
-                    # Lógica de contraseña automática: Apellido + 2026
-                    apellido = nombre.split()[-1].lower() if " " in nombre else "menfa"
-                    password_auto = f"{apellido}2026"
+            if st.button("Vincular Archivo al Programa"):
+                if archivo:
+                    # Guardamos el archivo físico
+                    ruta = os.path.join("archivos_programas", archivo.name)
+                    with open(ruta, "wb") as f:
+                        f.write(archivo.getbuffer())
                     
-                    nuevo_usuario = Usuario(
-                        nombre=nombre,
-                        email=email,
-                        password=password_auto,
-                        rol=rol
-                    )
+                    # Guardamos la ruta en la base de datos
+                    programa_db = session.query(Programa).filter_by(id=nombres_prog[prog_seleccionado]).first()
+                    programa_db.ruta_programa = ruta
+                    session.commit()
                     
-                    try:
-                        session.add(nuevo_usuario)
-                        session.commit()
-                        st.success(f"✅ Usuario creado con éxito.")
-                        st.info(f"🔑 Contraseña provisoria: **{password_auto}**")
-                        st.warning("Informale al alumno que use su apellido en minúsculas seguido de 2026.")
-                    except Exception as e:
-                        st.error(f"Error: El email ya está registrado.")
+                    st.success(f"✅ Programa de '{prog_seleccionado}' actualizado con el archivo: {archivo.name}")
                 else:
-                    st.warning("Por favor, completá nombre y email.")
+                    st.error("Por favor, seleccioná un archivo.")
+        else:
+            st.warning("⚠️ No hay programas creados. Primero creá un programa (nombre y descripción) para poder subirle un archivo.")
 
-    with tab2:
-        st.subheader("Subir Material a la Biblioteca")
-        with st.form("nuevo_recurso"):
-            titulo = st.text_input("Título del Material (ej: Guía de Well Control)")
-            tipo = st.selectbox("Tipo", ["PDF", "Video", "Simulador"])
-            url = st.text_input("URL (Google Drive / YouTube)")
-            cat = st.selectbox("Categoría", ["Perforación", "Producción", "Well Control", "Seguridad"])
-            
-            if st.form_submit_button("Publicar Recurso"):
-                nuevo_res = Recurso(titulo=titulo, tipo=tipo, url=url, categoria=cat)
-                session.add(nuevo_res)
-                session.commit()
-                st.success(f"📚 '{titulo}' ya está disponible en la biblioteca.")
-
-    with tab3:
-        st.subheader("Alumnos Registrados")
-        usuarios = session.query(Usuario).all()
-        for u in usuarios:
-            st.text(f"👤 {u.nombre} - 📧 {u.email} - 🛡️ {u.rol}")
+    with tab_materiales:
+        st.subheader("Subir material adicional (Videos/Guías)")
+        # Aquí va tu código actual de carga de materiales (links de YouTube, etc.)...
 
     session.close()

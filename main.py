@@ -9,7 +9,24 @@ st.set_page_config(page_title="MENFA Capacitaciones", layout="wide", page_icon="
 path_raiz = os.path.dirname(os.path.abspath(__file__))
 if path_raiz not in sys.path:
     sys.path.insert(0, path_raiz)
+# ... arriba en tus imports
+from styles import aplicar_estilos_web, mostrar_logo
 
+def main():
+    aplicar_estilos_web() # Aplica el fondo oscuro y dorado industrial
+    
+    # ... inicialización de base de datos ...
+
+    if not st.session_state['autenticado']:
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            mostrar_logo(ancho=300) # El logo grande para la pantalla de entrada
+            login(session)
+    else:
+        with st.sidebar:
+            mostrar_logo(ancho=150) # El logo más chico para el menú lateral
+            st.write("---")
+            # ... resto del menú ...
 # 3. Importaciones seguras
 try:
     # Importamos los módulos asegurando que busquen en la raíz

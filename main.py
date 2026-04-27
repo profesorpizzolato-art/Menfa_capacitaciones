@@ -9,45 +9,30 @@ st.set_page_config(page_title="MENFA Capacitaciones", layout="wide", page_icon="
 path_raiz = os.path.dirname(os.path.abspath(__file__))
 if path_raiz not in sys.path:
     sys.path.insert(0, path_raiz)
-# ... arriba en tus imports
-from styles import aplicar_estilos_web, mostrar_logo
 
-def main():
-    aplicar_estilos_web() # Aplica el fondo oscuro y dorado industrial
-    
-    # ... inicialización de base de datos ...
-
-    if not st.session_state['autenticado']:
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            mostrar_logo(ancho=300) # El logo grande para la pantalla de entrada
-            login(session)
-    else:
-        with st.sidebar:
-            mostrar_logo(ancho=150) # El logo más chico para el menú lateral
-            st.write("---")
-            # ... resto del menú ...
 # 3. Importaciones seguras
 try:
-    # Importamos los módulos asegurando que busquen en la raíz
-    import models
+    from styles import aplicar_estilos_web, mostrar_logo
     from database_manager import Session, inicializar_sistema
     from modulos.auth import login, logout
     from modulos.biblioteca import modulo_biblioteca
     from admin_panel import admin_module
     from crear_admin import crear_primer_admin
-    
+    import models
     exito_import = True
 except ImportError as e:
     st.error(f"Error crítico de archivos: {e}")
-    st.info("Asegurate de que 'models.py' y 'database_manager.py' estén en la raíz.")
+    st.info("Asegurate de que todos los archivos .py estén en la raíz o sus carpetas correspondientes.")
     exito_import = False
 
 def main():
     if not exito_import:
         return
 
-    # Inicializar base de datos y crear usuario admin oficial
+    # Aplicar estética MENFA (Fondo oscuro y dorado)
+    aplicar_estilos_web()
+
+    # Inicializar base de datos y asegurar usuario admin
     inicializar_sistema()
     crear_primer_admin()
     
@@ -58,22 +43,29 @@ def main():
         st.session_state['autenticado'] = False
 
     if not st.session_state['autenticado']:
-        login(session)
+        # --- PANTALLA DE LOGIN ---
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            mostrar_logo(ancho=300) # Logo grande centrado
+            login(session)
     else:
-        # --- Interfaz de Usuario Logueado ---
-        st.sidebar.title(f"Hola, {st.session_state.get('nombre', 'Usuario')}")
-        rol = st.session_state.get('rol', 'alumno')
-        
-        # Definir menú según el rol (Admin o Alumno)
-        if rol == "admin":
-            menu = ["Dashboard", "Administración CRM", "Biblioteca Técnica"]
-        else:
-            menu = ["Mis Recursos"]
-        
-        opcion = st.sidebar.selectbox("Navegación", menu)
-        
-        if st.sidebar.button("Cerrar Sesión"):
-            logout()
+        # --- INTERFAZ DE USUARIO LOGUEADO ---
+        with st.sidebar:
+            mostrar_logo(ancho=150) # Logo pequeño en barra lateral
+            st.write("---")
+            st.sidebar.title(f"Hola, {st.session_state.get('nombre', 'Usuario')}")
+            rol = st.session_state.get('rol', 'alumno')
+            
+            # Definir menú según el rol
+            if rol == "admin":
+                menu = ["Dashboard", "Administración CRM", "Biblioteca Técnica"]
+            else:
+                menu = ["Mis Recursos"]
+            
+            opcion = st.sidebar.selectbox("Navegación", menu)
+            
+            if st.sidebar.button("Cerrar Sesión"):
+                logout()
 
         # Enrutamiento de la aplicación
         if opcion == "Administración CRM":
@@ -81,9 +73,10 @@ def main():
         elif opcion in ["Biblioteca Técnica", "Mis Recursos"]:
             modulo_biblioteca(session, rol, st.session_state.get('usuario_id'))
         else:
+            # Pantalla de inicio
             st.title("Panel de Control MENFA")
             st.write("---")
-            st.info("Bienvenido al simulador y biblioteca técnica. Seleccioná una opción en el menú lateral.")
+            st.info("Bienvenido a la plataforma. Seleccioná una opción en el menú lateral para comenzar.")
             
     session.close()
 

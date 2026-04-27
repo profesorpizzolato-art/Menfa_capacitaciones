@@ -2,31 +2,30 @@ from database_manager import Session, inicializar_sistema
 from models import Usuario
 
 def crear_primer_admin():
-    # 1. Nos aseguramos de que las tablas existan
     inicializar_sistema()
     session = Session()
 
-    # 2. Datos de tu usuario (Podés cambiarlos si querés)
-    email_admin = "admin@menfa.com.ar"
-    password_admin = "admin123" # Luego la podés cambiar desde la base
+    # EL CORREO OFICIAL DE MENFA
+    email_admin = "menfacapacitaciones@gmail.com" 
+    password_admin = "Menfa2026" # Podés poner la que quieras aquí
 
-    # 3. Verificamos si ya existe para no duplicar
     existe = session.query(Usuario).filter_by(email=email_admin).first()
 
     if not existe:
         nuevo_admin = Usuario(
-            nombre="Fabricio Pizzolato",
+            nombre="Administración MENFA",
             email=email_admin,
             password=password_admin,
             rol="admin"
         )
         session.add(nuevo_admin)
         session.commit()
-        print(f"✅ Usuario {nuevo_admin.nombre} creado con éxito.")
-        print(f"📧 Email: {email_admin}")
-        print(f"🔑 Pass: {password_admin}")
+        print(f"✅ CRM Ligado a: {email_admin}")
     else:
-        print("⚠️ El usuario administrador ya existe.")
+        # Si ya existía con otro nombre, lo actualizamos
+        existe.email = email_admin
+        session.commit()
+        print("⚠️ Usuario actualizado con el correo oficial.")
 
     session.close()
 

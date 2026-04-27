@@ -12,7 +12,7 @@ if path_raiz not in sys.path:
 
 # 3. Importaciones seguras
 try:
-    from styles import aplicar_estilos_web, mostrar_logo
+    from modulos.styles import aplicar_estilos_web, mostrar_logo
     from database_manager import Session, inicializar_sistema
     from modulos.auth import login, logout
     from modulos.biblioteca import modulo_biblioteca

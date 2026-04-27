@@ -20,10 +20,18 @@ except ImportError as e:
     st.stop()
 
 def main():
-    if exito:
+  def main():
+     if exito:
         inicializar_sistema()
+        
+        # --- AGREGÁ ESTO PARA CREAR AL ADMIN ---
+        from crear_admin import crear_primer_admin
+        crear_primer_admin()
+        # ----------------------------------------
+        
         session = Session()
-
+        # ... resto del código
+  
         if 'autenticado' not in st.session_state:
             st.session_state['autenticado'] = False
 

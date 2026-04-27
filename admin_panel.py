@@ -1,23 +1,22 @@
 import streamlit as st
 import os
 from database_manager import Session
-from models import Programa
+from models import Programa, Usuario, Material # Importaciones correctas
 
 def admin_module():
     st.title("⚙️ Panel de Administración - MENFA")
     session = Session()
 
-    # 1. Asegurar que exista la carpeta para guardar los archivos
     if not os.path.exists("archivos_programas"):
         os.makedirs("archivos_programas")
 
-    # 2. Creamos las pestañas (Agregamos la de Programas)
     tab_alumnos, tab_programas, tab_materiales = st.tabs([
         "👥 Gestión de Alumnos", 
         "📄 Programas (PDF/Docs)", 
         "📚 Material de Estudio"
     ])
-
+    
+    # ... resto del código que te pasé antes ...
     with tab_alumnos:
         st.subheader("Registro de nuevos alumnos")
         # Aquí va tu código actual de registro de alumnos...

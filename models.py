@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Text, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -7,27 +7,22 @@ Base = declarative_base()
 class Usuario(Base):
     __tablename__ = 'usuarios'
     id = Column(Integer, primary_key=True)
-    nombre = Column(String(100), nullable=False)
-    email = Column(String(100), unique=True, nullable=False)
-    password = Column(String(100), nullable=False)
-    rol = Column(String(20), default='alumno')
-    progresos = relationship("Progreso", back_populates="usuario")
+    nombre = Column(String(100))
+    email = Column(String(100), unique=True)
+    password = Column(String(100))
+    rol = Column(String(20)) # 'admin' o 'alumno'
 
-class Recurso(Base):
-    __tablename__ = 'recursos'
+class Programa(Base):
+    __tablename__ = 'programas'
     id = Column(Integer, primary_key=True)
-    titulo = Column(String(200), nullable=False)
-    tipo = Column(String(50)) 
-    url = Column(Text, nullable=False)
-    categoria = Column(String(100))
-    progresos = relationship("Progreso", back_populates="recurso")
+    nombre = Column(String(100))
+    descripcion = Column(Text)
+    ruta_programa = Column(String(255)) # Aquí guardamos la ubicación del PDF/Word
 
-class Progreso(Base):
-    __tablename__ = 'progreso'
+class Material(Base):
+    __tablename__ = 'materiales'
     id = Column(Integer, primary_key=True)
+    titulo = Column(String(100))
+    link = Column(String(255))
+    categoria = Column(String(50))
     usuario_id = Column(Integer, ForeignKey('usuarios.id'))
-    recurso_id = Column(Integer, ForeignKey('recursos.id'))
-    completado = Column(Integer, default=0)
-    ruta_programa = Column(String(255))
-    usuario = relationship("Usuario", back_populates="progresos")
-    recurso = relationship("Recurso", back_populates="progresos")

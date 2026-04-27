@@ -28,5 +28,6 @@ class Progreso(Base):
     usuario_id = Column(Integer, ForeignKey('usuarios.id'))
     recurso_id = Column(Integer, ForeignKey('recursos.id'))
     completado = Column(Integer, default=0)
+    ruta_programa = Column(String(255))
     usuario = relationship("Usuario", back_populates="progresos")
     recurso = relationship("Recurso", back_populates="progresos")

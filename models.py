@@ -17,9 +17,9 @@ class Programa(Base):
     id = Column(Integer, primary_key=True)
     nombre = Column(String(100))
     descripcion = Column(Text)
-    ruta_programa = Column(String(255)) # Aquí guardamos la ubicación del PDF/Word
+    ruta_programa = Column(String(255))
 
-class Material(Base):
+class Material(Base): # Asegurate de que se llame Material, NO Recurso
     __tablename__ = 'materiales'
     id = Column(Integer, primary_key=True)
     titulo = Column(String(100))

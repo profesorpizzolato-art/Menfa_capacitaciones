@@ -2,81 +2,87 @@ import streamlit as st
 import sys
 import os
 
-# 1. Configuración de página (SIEMPRE PRIMERO)
+# 1. Configuración de página
 st.set_page_config(page_title="MENFA Capacitaciones", layout="wide", page_icon="⚒️")
 
-# 2. Forzar que Python reconozca la raíz del proyecto
+# 2. Forzar ruta raíz
 path_raiz = os.path.dirname(os.path.abspath(__file__))
 if path_raiz not in sys.path:
     sys.path.insert(0, path_raiz)
 
-# 3. Importaciones seguras
+# 3. Importaciones
 try:
     from modulos.styles import aplicar_estilos_web, mostrar_logo
     from database_manager import Session, inicializar_sistema
     from modulos.auth import login, logout
     from modulos.biblioteca import modulo_biblioteca
+    from modulos.examen import modulo_examen  # <-- Movido aquí adentro
     from admin_panel import admin_module
     from crear_admin import crear_primer_admin
     import models
     exito_import = True
 except ImportError as e:
     st.error(f"Error crítico de archivos: {e}")
-    st.info("Asegurate de que todos los archivos .py estén en la raíz o sus carpetas correspondientes.")
     exito_import = False
 
 def main():
     if not exito_import:
         return
 
-    # Aplicar estética MENFA (Fondo oscuro y dorado)
     aplicar_estilos_web()
-
-    # Inicializar base de datos y asegurar usuario admin
     inicializar_sistema()
     crear_primer_admin()
     
     session = Session()
 
-    # Manejo de la sesión en Streamlit
     if 'autenticado' not in st.session_state:
         st.session_state['autenticado'] = False
 
     if not st.session_state['autenticado']:
-        # --- PANTALLA DE LOGIN ---
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            mostrar_logo(ancho=300) # Logo grande centrado
+            mostrar_logo(ancho=300)
             login(session)
     else:
-        # --- INTERFAZ DE USUARIO LOGUEADO ---
         with st.sidebar:
-            mostrar_logo(ancho=150) # Logo pequeño en barra lateral
+            mostrar_logo(ancho=150)
             st.write("---")
             st.sidebar.title(f"Hola, {st.session_state.get('nombre', 'Usuario')}")
             rol = st.session_state.get('rol', 'alumno')
             
-            # Definir menú según el rol
+            # --- MENÚ SEGÚN ROL ---
             if rol == "admin":
-                menu = ["Dashboard", "Administración CRM", "Biblioteca Técnica"]
+                menu = ["Dashboard", "Administración CRM", "Biblioteca Técnica", "Vista Previa Examen"]
             else:
-                menu = ["Mis Recursos"]
+                menu = ["Mis Recursos", "Rendir Examen"] # <-- Nueva opción para el alumno
             
             opcion = st.sidebar.selectbox("Navegación", menu)
             
             if st.sidebar.button("Cerrar Sesión"):
                 logout()
 
-        # Enrutamiento de la aplicación
+        # --- ENRUTAMIENTO ---
         if opcion == "Administración CRM":
             admin_module()
+        
         elif opcion in ["Biblioteca Técnica", "Mis Recursos"]:
             modulo_biblioteca(session, rol, st.session_state.get('usuario_id'))
+        
+        elif opcion in ["Rendir Examen", "Vista Previa Examen"]:
+            # Aquí el alumno elige qué curso rendir
+            st.title("📝 Centro de Evaluaciones")
+            programas = session.query(models.Programa).all()
+            if programas:
+                nombres = {p.nombre: p.id for p in programas}
+                sel = st.selectbox("Seleccioná el examen a rendir", list(nombres.keys()))
+                modulo_examen(session, st.session_state.get('usuario_id'), nombres[sel], sel)
+            else:
+                st.info("No hay exámenes disponibles.")
+
         else:
-            # Pantalla de inicio
             st.title("Panel de Control MENFA")
             st.write("---")
-            st.info("Bienvenido a la plataforma. Seleccioná una opción en el menú lateral para comenzar.")
+            st.info("Bienvenido. Seleccioná una opción para comenzar.")
             
     session.close()
 

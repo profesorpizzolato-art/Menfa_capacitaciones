@@ -1,6 +1,5 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, Float
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
@@ -19,10 +18,20 @@ class Programa(Base):
     descripcion = Column(Text)
     ruta_programa = Column(String(255))
 
-class Material(Base): # Asegurate de que se llame Material, NO Recurso
-    __tablename__ = 'materiales'
+class Pregunta(Base):
+    __tablename__ = 'preguntas'
     id = Column(Integer, primary_key=True)
-    titulo = Column(String(100))
-    link = Column(String(255))
-    categoria = Column(String(50))
+    programa_id = Column(Integer, ForeignKey('programas.id'))
+    enunciado = Column(Text)
+    opcion_a = Column(String(255))
+    opcion_b = Column(String(255))
+    opcion_c = Column(String(255))
+    correcta = Column(String(1)) # 'A', 'B' o 'C'
+
+class ExamenResultado(Base):
+    __tablename__ = 'resultados'
+    id = Column(Integer, primary_key=True)
     usuario_id = Column(Integer, ForeignKey('usuarios.id'))
+    programa_id = Column(Integer, ForeignKey('programas.id'))
+    nota = Column(Float)
+    intentos = Column(Integer, default=1)

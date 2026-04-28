@@ -1,5 +1,5 @@
 import streamlit as st
-from models import Recurso, Progreso
+from models import Material
 
 def modulo_biblioteca(session, rol, usuario_id):
     st.title("📚 Biblioteca Técnica")

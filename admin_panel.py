@@ -3,17 +3,9 @@ import os
 from database_manager import Session
 from models import Programa, Usuario, Material
 
-def admin_module():
-    st.title("⚙️ Panel de Administración - MENFA")
-    session = Session()
-
-    if not os.path.exists("archivos_programas"):
-        os.makedirs("archivos_programas")
-
-    tab_alumnos, tab_programas, tab_materiales = st.tabs([
-        "👥 Gestión de Alumnos", 
-        "📄 Programas (PDF/Docs)", 
-        "📚 Material de Estudio"
+# Dentro de admin_module(), agregar tab_examenes a los st.tabs
+    tab_alumnos, tab_programas, tab_materiales, tab_examenes = st.tabs([
+        "👥 Alumnos", "📄 Programas", "📚 Material", "📝 Configurar Examen"
     ])
 
     with tab_alumnos:
@@ -71,5 +63,32 @@ def admin_module():
     with tab_materiales:
         st.subheader("Subir material adicional")
         st.info("Sección para videos y guías.")
+    # Dentro de admin_module(), agregar tab_examenes a los st.tabs
+    tab_alumnos, tab_programas, tab_materiales, tab_examenes = st.tabs([
+        "👥 Alumnos", "📄 Programas", "📚 Material", "📝 Configurar Examen"
+    ])
 
+    with tab_examenes:
+        st.subheader("📝 Cargar Preguntas de Examen")
+        programas = session.query(Programa).all()
+        if programas:
+            prog_sel = st.selectbox("Curso del Examen", {p.nombre: p.id for p in programas}.keys(), key="prog_exam")
+            prog_id = {p.nombre: p.id for p in programas}[prog_sel]
+            
+            with st.form("nueva_pregunta"):
+                enunciado = st.text_area("Pregunta")
+                col1, col2, col3 = st.columns(3)
+                a = col1.text_input("Opción A")
+                b = col2.text_input("Opción B")
+                c = col3.text_input("Opción C")
+                correcta = st.selectbox("Correcta", ["A", "B", "C"])
+                
+                if st.form_submit_button("Guardar Pregunta"):
+                    nueva_q = Pregunta(programa_id=prog_id, enunciado=enunciado, 
+                                       opcion_a=a, opcion_b=b, opcion_c=c, correcta=correcta)
+                    session.add(nueva_q)
+                    session.commit()
+                    st.success("Pregunta agregada.")
+        else:
+            st.warning("Primero creá un programa.")
     session.close()

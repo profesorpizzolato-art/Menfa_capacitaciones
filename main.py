@@ -2,7 +2,7 @@ import streamlit as st
 import sys
 import os
 
-# 1. Configuración de página
+# 1. Configuración de página (SIEMPRE PRIMERO)
 st.set_page_config(page_title="MENFA Capacitaciones", layout="wide", page_icon="⚒️")
 
 # 2. Forzar ruta raíz
@@ -10,13 +10,13 @@ path_raiz = os.path.dirname(os.path.abspath(__file__))
 if path_raiz not in sys.path:
     sys.path.insert(0, path_raiz)
 
-# 3. Importaciones
+# 3. Importaciones (Limpias y ordenadas)
 try:
     from modulos.styles import aplicar_estilos_web, mostrar_logo
     from database_manager import Session, inicializar_sistema
     from modulos.auth import login, logout
     from modulos.biblioteca import modulo_biblioteca
-    from modulos.examen import modulo_examen  # <-- Movido aquí adentro
+    from modulos.examen import modulo_examen
     from admin_panel import admin_module
     from crear_admin import crear_primer_admin
     import models
@@ -50,11 +50,10 @@ def main():
             st.sidebar.title(f"Hola, {st.session_state.get('nombre', 'Usuario')}")
             rol = st.session_state.get('rol', 'alumno')
             
-            # --- MENÚ SEGÚN ROL ---
             if rol == "admin":
                 menu = ["Dashboard", "Administración CRM", "Biblioteca Técnica", "Vista Previa Examen"]
             else:
-                menu = ["Mis Recursos", "Rendir Examen"] # <-- Nueva opción para el alumno
+                menu = ["Mis Recursos", "Rendir Examen"]
             
             opcion = st.sidebar.selectbox("Navegación", menu)
             
@@ -64,21 +63,17 @@ def main():
         # --- ENRUTAMIENTO ---
         if opcion == "Administración CRM":
             admin_module()
-        
         elif opcion in ["Biblioteca Técnica", "Mis Recursos"]:
             modulo_biblioteca(session, rol, st.session_state.get('usuario_id'))
-        
         elif opcion in ["Rendir Examen", "Vista Previa Examen"]:
-            # Aquí el alumno elige qué curso rendir
             st.title("📝 Centro de Evaluaciones")
             programas = session.query(models.Programa).all()
             if programas:
                 nombres = {p.nombre: p.id for p in programas}
-                sel = st.selectbox("Seleccioná el examen a rendir", list(nombres.keys()))
+                sel = st.selectbox("Seleccioná el examen", list(nombres.keys()))
                 modulo_examen(session, st.session_state.get('usuario_id'), nombres[sel], sel)
             else:
                 st.info("No hay exámenes disponibles.")
-
         else:
             st.title("Panel de Control MENFA")
             st.write("---")

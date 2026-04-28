@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 from database_manager import Session
-from models import Programa, Usuario, Material # Importaciones correctas
+from models import Programa, Usuario, Material
 
 def admin_module():
     st.title("⚙️ Panel de Administración - MENFA")
@@ -15,16 +15,15 @@ def admin_module():
         "📄 Programas (PDF/Docs)", 
         "📚 Material de Estudio"
     ])
-    
-    # ... resto del código que te pasé antes ...
+
     with tab_alumnos:
         st.subheader("Registro de nuevos alumnos")
-        # Aquí va tu código actual de registro de alumnos...
+        st.info("Espacio para el formulario de alumnos.")
 
-   with tab_programas:
+    with tab_programas:
         st.subheader("Gestión de Programas Oficiales")
 
-        # --- SECCIÓN 1: CREAR EL NOMBRE DEL PROGRAMA ---
+        # SECCIÓN 1: CREAR EL NOMBRE DEL PROGRAMA
         with st.expander("➕ Crear Nuevo Nombre de Programa (Hacé clic aquí)"):
             with st.form("crear_prog_form"):
                 nuevo_nombre = st.text_input("Nombre del Programa (ej: Recorredor de Campo)")
@@ -34,36 +33,37 @@ def admin_module():
                         nuevo_p = Programa(nombre=nuevo_nombre, descripcion=nueva_desc)
                         session.add(nuevo_p)
                         session.commit()
-                        st.success(f"¡Programa '{nuevo_nombre}' creado! Ahora podés subir el archivo abajo.")
-                        st.rerun() # Esto actualiza la lista automáticamente
+                        st.success(f"¡Programa '{nuevo_nombre}' creado!")
+                        st.rerun()
 
         st.write("---")
 
-        # --- SECCIÓN 2: SUBIR EL ARCHIVO ---
+        # SECCIÓN 2: SUBIR EL ARCHIVO
         programas = session.query(Programa).all()
         nombres_prog = {p.nombre: p.id for p in programas}
 
         if nombres_prog:
             st.write("### Subir Archivo PDF/Word")
-            prog_seleccionado = st.selectbox("Seleccioná el curso para asociar el archivo", list(nombres_prog.keys()))
-            archivo = st.file_uploader("Arrastrá el archivo del programa aquí", type=['pdf', 'docx', 'doc', 'pptx'])
+            prog_sel = st.selectbox("Seleccioná el curso para el archivo", list(nombres_prog.keys()))
+            archivo = st.file_uploader("Arrastrá el archivo aquí", type=['pdf', 'docx', 'doc', 'pptx'])
             
-            if st.button("Vincular Archivo al Programa"):
+            if st.button("Vincular Archivo"):
                 if archivo:
                     ruta = os.path.join("archivos_programas", archivo.name)
                     with open(ruta, "wb") as f:
                         f.write(archivo.getbuffer())
                     
-                    programa_db = session.query(Programa).filter_by(id=nombres_prog[prog_seleccionado]).first()
-                    programa_db.ruta_programa = ruta
+                    prog_db = session.query(Programa).filter_by(id=nombres_prog[prog_sel]).first()
+                    prog_db.ruta_programa = ruta
                     session.commit()
-                    st.success(f"✅ ¡Archivo '{archivo.name}' vinculado con éxito a {prog_seleccionado}!")
+                    st.success(f"✅ Archivo '{archivo.name}' vinculado con éxito.")
                 else:
-                    st.error("Por favor, seleccioná un archivo.")
+                    st.error("Seleccioná un archivo.")
         else:
-            st.warning("⚠️ No hay programas creados. Usá el botón de arriba (+) para crear el primer curso.")
+            st.warning("⚠️ No hay programas creados. Usá el botón de arriba (+) para empezar.")
+
     with tab_materiales:
-        st.subheader("Subir material adicional (Videos/Guías)")
-        # Aquí va tu código actual de carga de materiales (links de YouTube, etc.)...
+        st.subheader("Subir material adicional")
+        st.info("Espacio para subir links de videos o guías técnicas.")
 
     session.close()

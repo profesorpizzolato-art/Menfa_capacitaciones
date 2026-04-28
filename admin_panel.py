@@ -21,37 +21,47 @@ def admin_module():
         st.subheader("Registro de nuevos alumnos")
         # Aquí va tu código actual de registro de alumnos...
 
-    with tab_programas:
-        st.subheader("Cargar Programa Oficial (Archivo)")
-        st.write("Subí el PDF o Word con el programa completo del curso.")
+   with tab_programas:
+        st.subheader("Gestión de Programas Oficiales")
 
-        # Buscamos qué programas existen en la DB para asociar el archivo
+        # --- SECCIÓN 1: CREAR EL NOMBRE DEL PROGRAMA ---
+        with st.expander("➕ Crear Nuevo Nombre de Programa (Hacé clic aquí)"):
+            with st.form("crear_prog_form"):
+                nuevo_nombre = st.text_input("Nombre del Programa (ej: Recorredor de Campo)")
+                nueva_desc = st.text_area("Descripción breve")
+                if st.form_submit_button("Guardar Programa"):
+                    if nuevo_nombre:
+                        nuevo_p = Programa(nombre=nuevo_nombre, descripcion=nueva_desc)
+                        session.add(nuevo_p)
+                        session.commit()
+                        st.success(f"¡Programa '{nuevo_nombre}' creado! Ahora podés subir el archivo abajo.")
+                        st.rerun() # Esto actualiza la lista automáticamente
+
+        st.write("---")
+
+        # --- SECCIÓN 2: SUBIR EL ARCHIVO ---
         programas = session.query(Programa).all()
         nombres_prog = {p.nombre: p.id for p in programas}
 
         if nombres_prog:
-            prog_seleccionado = st.selectbox("Seleccioná el curso", list(nombres_prog.keys()))
-            
-            archivo = st.file_uploader("Seleccioná el programa", type=['pdf', 'docx', 'doc'])
+            st.write("### Subir Archivo PDF/Word")
+            prog_seleccionado = st.selectbox("Seleccioná el curso para asociar el archivo", list(nombres_prog.keys()))
+            archivo = st.file_uploader("Arrastrá el archivo del programa aquí", type=['pdf', 'docx', 'doc', 'pptx'])
             
             if st.button("Vincular Archivo al Programa"):
                 if archivo:
-                    # Guardamos el archivo físico
                     ruta = os.path.join("archivos_programas", archivo.name)
                     with open(ruta, "wb") as f:
                         f.write(archivo.getbuffer())
                     
-                    # Guardamos la ruta en la base de datos
                     programa_db = session.query(Programa).filter_by(id=nombres_prog[prog_seleccionado]).first()
                     programa_db.ruta_programa = ruta
                     session.commit()
-                    
-                    st.success(f"✅ Programa de '{prog_seleccionado}' actualizado con el archivo: {archivo.name}")
+                    st.success(f"✅ ¡Archivo '{archivo.name}' vinculado con éxito a {prog_seleccionado}!")
                 else:
                     st.error("Por favor, seleccioná un archivo.")
         else:
-            st.warning("⚠️ No hay programas creados. Primero creá un programa (nombre y descripción) para poder subirle un archivo.")
-
+            st.warning("⚠️ No hay programas creados. Usá el botón de arriba (+) para crear el primer curso.")
     with tab_materiales:
         st.subheader("Subir material adicional (Videos/Guías)")
         # Aquí va tu código actual de carga de materiales (links de YouTube, etc.)...
